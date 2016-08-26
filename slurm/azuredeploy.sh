@@ -63,7 +63,8 @@ done
 # Install SLURM on master node
 ###################################
 
-adduser --force-badname --system --home /nonexistent --no-create-home --quiet _apt || true
+# Workaround for https://bugs.launchpad.net/ubuntu/+source/aptitude/+bug/1543280
+sudo adduser --force-badname --system --home /nonexistent --no-create-home --quiet _apt || true
 # Install the package
 sudo apt-get update >> /tmp/azuredeploy.log.$$ 2>&1
 sudo chmod g-w /var/log >> /tmp/azuredeploy.log.$$ 2>&1 # Must do this before munge will generate key
@@ -107,6 +108,8 @@ do
 
    echo "Remote execute on $worker" >> /tmp/azuredeploy.log.$$ 2>&1 
    sudo -u $ADMIN_USERNAME ssh $ADMIN_USERNAME@$worker >> /tmp/azuredeploy.log.$$ 2>&1 << 'ENDSSH1'
+      # Workaround for https://bugs.launchpad.net/ubuntu/+source/aptitude/+bug/1543280
+      sudo adduser --force-badname --system --home /nonexistent --no-create-home --quiet _apt || true
       sudo sh -c "cat /tmp/hosts >> /etc/hosts"
       sudo chmod g-w /var/log
       sudo apt-get update
