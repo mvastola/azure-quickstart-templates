@@ -76,10 +76,12 @@ lastvm=`expr $NUM_OF_VM - 1`
 sed -i -- 's/__WORKERNODES__/'"$WORKER_NAME"'[0-'"$lastvm"']/g' $SLURMCONF >> /tmp/azuredeploy.log.$$ 2>&1
 sudo cp -f $SLURMCONF /etc/slurm-llnl/slurm.conf >> /tmp/azuredeploy.log.$$ 2>&1
 sudo chown slurm /etc/slurm-llnl/slurm.conf >> /tmp/azuredeploy.log.$$ 2>&1
-sudo chmod o+w /var/spool # Write access for slurmctld log. Consider switch log file to another location
-sudo -u slurm /usr/sbin/slurmctld >> /tmp/azuredeploy.log.$$ 2>&1 # Start the master daemon service
-sudo munged --force >> /tmp/azuredeploy.log.$$ 2>&1 # Start munged
-sudo slurmd >> /tmp/azuredeploy.log.$$ 2>&1 # Start the node
+sudo systemctl start slurmctld >> /tmp/azuredeploy.log.$$ 2>&1 # Start the master daemon service
+sudo systemctl status slurmctld >> /tmp/azuredeploy.log.$$ 2>&1 # Status of the master daemon service
+sudo systemctl start munge >> /tmp/azuredeploy.log.$$ 2>&1 # Start munge
+sudo systemctl status munge >> /tmp/azuredeploy.log.$$ 2>&1 # Status of munge
+sudo systemctl start slurmd >> /tmp/azuredeploy.log.$$ 2>&1 # Start the node
+sudo systemctl status slurmd >> /tmp/azuredeploy.log.$$ 2>&1 # Status of the node
 
 # Install slurm on all nodes by running apt-get
 # Also push munge key and slurm.conf to them
@@ -108,13 +110,14 @@ do
       sudo apt-get update
       sudo apt-get install slurm-llnl -y
       sudo cp -f /tmp/munge.key /etc/munge/munge.key
-      sudo chown munge /etc/munge/munge.key
-      sudo chgrp munge /etc/munge/munge.key
+      sudo chown munge: /etc/munge/munge.key
       sudo rm -f /tmp/munge.key
-      sudo /usr/sbin/munged --force # ignore egregrious security warning
+      sudo systemctl start munge
+      sudo systemctl status munge
       sudo cp -f /tmp/slurm.conf /etc/slurm-llnl/slurm.conf
-      sudo chown slurm /etc/slurm-llnl/slurm.conf
-      sudo slurmd
+      sudo chown slurm: /etc/slurm-llnl/slurm.conf
+      sudo systemctl start slurmd
+      sudo systemctl status slurmd
 ENDSSH1
 
    i=`expr $i + 1`
