@@ -63,10 +63,10 @@ done
 # Install SLURM on master node
 ###################################
 
+adduser --force-badname --system --home /nonexistent --no-create-home --quiet _apt || true
 # Install the package
 sudo apt-get update >> /tmp/azuredeploy.log.$$ 2>&1
 sudo chmod g-w /var/log >> /tmp/azuredeploy.log.$$ 2>&1 # Must do this before munge will generate key
-sudo apt-get install slurm-llnl -y >> /tmp/azuredeploy.log.$$ 2>&1
 
 # Download slurm.conf and fill in the node info
 SLURMCONF=/tmp/slurm.conf.$$
@@ -75,7 +75,8 @@ sed -i -- 's/__MASTERNODE__/'"$MASTER_NAME"'/g' $SLURMCONF >> /tmp/azuredeploy.l
 lastvm=`expr $NUM_OF_VM - 1`
 sed -i -- 's/__WORKERNODES__/'"$WORKER_NAME"'[0-'"$lastvm"']/g' $SLURMCONF >> /tmp/azuredeploy.log.$$ 2>&1
 sudo cp -f $SLURMCONF /etc/slurm-llnl/slurm.conf >> /tmp/azuredeploy.log.$$ 2>&1
-sudo chown slurm /etc/slurm-llnl/slurm.conf >> /tmp/azuredeploy.log.$$ 2>&1
+sudo chown slurm: /etc/slurm-llnl/slurm.conf >> /tmp/azuredeploy.log.$$ 2>&1
+sudo apt-get -y install slurm-wlm >> /tmp/azuredeploy.log.$$ 2>&1
 sudo systemctl start slurmctld >> /tmp/azuredeploy.log.$$ 2>&1 # Start the master daemon service
 sudo systemctl status slurmctld >> /tmp/azuredeploy.log.$$ 2>&1 # Status of the master daemon service
 sudo systemctl start munge >> /tmp/azuredeploy.log.$$ 2>&1 # Start munge
@@ -90,6 +91,7 @@ echo "Prepare the local copy of munge key" >> /tmp/azuredeploy.log.$$ 2>&1
 mungekey=/tmp/munge.key.$$
 sudo cp -f /etc/munge/munge.key $mungekey
 sudo chown $ADMIN_USERNAME $mungekey
+sudo chmod u=rw,g=-,o=- $mungekey
 
 echo "Start looping all workers" >> /tmp/azuredeploy.log.$$ 2>&1 
 
@@ -108,14 +110,12 @@ do
       sudo sh -c "cat /tmp/hosts >> /etc/hosts"
       sudo chmod g-w /var/log
       sudo apt-get update
-      sudo apt-get install slurm-llnl -y
-      sudo cp -f /tmp/munge.key /etc/munge/munge.key
-      sudo chown munge: /etc/munge/munge.key
-      sudo rm -f /tmp/munge.key
+      sudo mv -f /tmp/munge.key /etc/munge/munge.key
+      sudo mv -f /tmp/slurm.conf /etc/slurm-llnl/slurm.conf
+      sudo chown slurm: /etc/slurm-llnl/slurm.conf
+      sudo apt-get -y install slurmd slurm-client
       sudo systemctl start munge
       sudo systemctl status munge
-      sudo cp -f /tmp/slurm.conf /etc/slurm-llnl/slurm.conf
-      sudo chown slurm: /etc/slurm-llnl/slurm.conf
       sudo systemctl start slurmd
       sudo systemctl status slurmd
 ENDSSH1

@@ -1,0 +1,4 @@
+- Ubuntu 15.10 image no longer exists, so switching to 16.04 LTS.
+- slurm-llnl is now a transitional package for slurm-wlm, which itself is just a meta-package for slurmd, slurm-client and slurmctld. As a result, I switched to slurm-wlm on the master, and since slurmctld isn't needed on the workers, I set just slurmd and slurm-client to install on those.
+- Config files need to be placed before their respective packages are installed (the deb installer won't overwrite existing config files) becasue for these package, the installers start the service immediately upon completion.
+- Therefore, technically the commands to start the services aren't required (I am leaving them because they're harmless) but when they are run, they should never invoke the daemon directly. They must use `systemd start SERVICE_NAME`.
