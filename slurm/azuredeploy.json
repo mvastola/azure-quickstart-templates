@@ -51,7 +51,7 @@
   "variables": {
     "imagePublisher": "Canonical",
     "imageOffer": "UbuntuServer",
-    "ubuntuOSVersion": "15.10",
+    "ubuntuOSVersion": "16.04",
     "vmStorageAccountContainerName": "vhd",
     "OSDiskName": "osdisk",
     "publicIPAddressType": "Dynamic",
